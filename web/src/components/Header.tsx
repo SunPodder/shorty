@@ -53,7 +53,7 @@ function Header() {
 					</>
 				) : (
 					<Link
-						to="/login"
+						to="/signin"
 						className="text-blue-500 flex items-center"
 					>
 						<LogIn className="mr-1" /> Sign In
