@@ -7,17 +7,16 @@ import {
 	LayoutDashboard,
 	Link as LinkIcon,
 } from "lucide-react";
-import { useAuth } from "../hooks/useAuth";
+import { pb } from "../hooks/usePB";
 
 function Header() {
-	const { isAuthenticated } = useAuth();
 
 	return (
 		<header className="p-4 bg-gray-100 border-b border-gray-300">
 			<div className="flex justify-between items-center mx-8">
 			<div className="text-2xl font-bold">Shorty</div>
 			<div className="flex items-center space-x-4">
-				{isAuthenticated ? (
+				{pb.authStore.isValid ? (
 					<>
 						<Link
 							to="/dashboard"

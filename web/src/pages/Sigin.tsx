@@ -1,16 +1,18 @@
 import { useState, FormEvent, useEffect } from "react";
-import { redirect, Link } from "react-router";
-import { Mail, Lock, Github, ArrowLeft, EyeOff, Eye, XCircle, CheckCircle } from "lucide-react";
-import { useAuth } from "../hooks/useAuth";
+import { Link, Navigate } from "react-router";
+import {
+	Mail,
+	Lock,
+	Github,
+	ArrowLeft,
+	EyeOff,
+	Eye,
+	XCircle,
+	CheckCircle,
+} from "lucide-react";
+import { pb } from "../hooks/usePB";
 
 function Signin() {
-	// Redirect to /dashboard if user is already signed in
-	const { isAuthenticated } = useAuth();
-	if (isAuthenticated) {
-		redirect("/dashboard");
-		return null;
-	}
-
 	const [email, setEmail] = useState("");
 	const [password, setPassword] = useState("");
 	const [showPassword, setShowPassword] = useState(false);
@@ -43,6 +45,11 @@ function Signin() {
 		setIsPasswordValid(password.length >= 8);
 	}, [password]);
 
+	// Redirect to /dashboard if user is already signed in
+	if (pb.authStore.isValid) {
+		return <Navigate replace to="/dashboard" />;
+	}
+
 	const handleLogin = async (e: FormEvent) => {
 		e.preventDefault();
 		setError("");
@@ -51,9 +58,16 @@ function Signin() {
 		try {
 			// Call login API or auth function here
 			console.log("Logging in with:", email, password);
-			// await login(email, password);
 
-			// Redirect happens through Auth context
+			const data = await pb
+				.collection("users")
+				.authWithPassword(email, password);
+
+			console.log(data);
+			if (pb.authStore.isValid) {
+				return <Navigate replace to="/dashboard" />;
+			}
+			// eslint-disable-next-line @typescript-eslint/no-unused-vars
 		} catch (_err) {
 			setError("Invalid email or password");
 		} finally {
@@ -68,10 +82,21 @@ function Signin() {
 
 		try {
 			// Call register API or auth function here
-			console.log("Registering with:", email, password);
-			// await register(email, password);
+			const data = {
+				password: password,
+				passwordConfirm: password,
+				email: email,
+			};
+			const record = await pb.collection("users").create(data);
 
-			// Redirect happens through Auth context
+			if (record?.id) {
+				await pb.collection("users").authWithPassword(email, password);
+			}
+
+			if (pb.authStore.isValid) {
+				return <Navigate replace to="/dashboard" />;
+			}
+			// eslint-disable-next-line @typescript-eslint/no-unused-vars
 		} catch (_err) {
 			setError("Registration failed. Email might already be in use.");
 		} finally {
@@ -86,6 +111,13 @@ function Signin() {
 		try {
 			// GitHub OAuth login logic here
 			console.log("GitHub login");
+
+			await pb.collection("users").authWithOAuth2({ provider: "github" });
+
+			if (pb.authStore.isValid) {
+				return <Navigate replace to="/dashboard" />;
+			}
+			// eslint-disable-next-line @typescript-eslint/no-unused-vars
 		} catch (_err) {
 			setError("GitHub login failed");
 		} finally {
