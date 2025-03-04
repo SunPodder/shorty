@@ -15,7 +15,9 @@ function Header() {
 	return (
 		<header className="p-4 bg-gray-100 border-b border-gray-300">
 			<div className="flex justify-between items-center mx-8">
-				<div className="text-2xl font-bold">Shorty</div>
+				<div className="text-2xl font-bold">
+					<Link to="/">Shorty</Link>
+				</div>
 				<div className="flex items-center space-x-4">
 					{isAuthenticated ? (
 						<>
