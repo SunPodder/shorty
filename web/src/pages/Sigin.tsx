@@ -88,6 +88,7 @@ function Signin() {
 				password: password,
 				passwordConfirm: password,
 				email: email,
+				name: email.split("@")[0],
 			};
 			const record = await pb.collection("users").create(data);
 
