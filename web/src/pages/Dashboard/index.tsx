@@ -4,6 +4,8 @@ import Footer from "../../components/Footer";
 import UrlsTable from "./UrlsTable";
 import ShortnerTool from "./ShortnerTool";
 import Analytics from "./Analytics";
+import { useAuth } from "../../hooks/useAuth";
+import { Navigate } from "react-router";
 
 // Mock data for URLs
 const mockUrls = [
@@ -35,6 +37,7 @@ const mockUrls = [
 
 function Dashboard() {
 	const [urls, setUrls] = useState(mockUrls);
+	const { isAuthenticated } = useAuth();
 
 	// Mock user data
 	const user = {
@@ -42,6 +45,10 @@ function Dashboard() {
 		totalUrls: mockUrls.length,
 		totalClicks: mockUrls.reduce((sum, url) => sum + url.clicks, 0),
 	};
+
+	if (!isAuthenticated) {
+		return <Navigate replace to="/signin" />;
+	}
 
 	return (
 		<div className="min-h-screen flex flex-col bg-gray-50">
