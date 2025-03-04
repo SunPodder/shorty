@@ -10,7 +10,7 @@ import {
 	XCircle,
 	CheckCircle,
 } from "lucide-react";
-import { pb } from "../hooks/usePB";
+import { pb, useAuth } from "../hooks/useAuth";
 
 function Signin() {
 	const [email, setEmail] = useState("");
@@ -23,6 +23,8 @@ function Signin() {
 	const [isPasswordValid, setIsPasswordValid] = useState<boolean | null>(
 		null,
 	);
+
+	const { isAuthenticated } = useAuth();
 
 	// Validate email on change
 	useEffect(() => {
@@ -46,7 +48,7 @@ function Signin() {
 	}, [password]);
 
 	// Redirect to /dashboard if user is already signed in
-	if (pb.authStore.isValid) {
+	if (isAuthenticated) {
 		return <Navigate replace to="/dashboard" />;
 	}
 
@@ -64,7 +66,7 @@ function Signin() {
 				.authWithPassword(email, password);
 
 			console.log(data);
-			if (pb.authStore.isValid) {
+			if (isAuthenticated) {
 				return <Navigate replace to="/dashboard" />;
 			}
 			// eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -93,7 +95,7 @@ function Signin() {
 				await pb.collection("users").authWithPassword(email, password);
 			}
 
-			if (pb.authStore.isValid) {
+			if (isAuthenticated) {
 				return <Navigate replace to="/dashboard" />;
 			}
 			// eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -114,7 +116,7 @@ function Signin() {
 
 			await pb.collection("users").authWithOAuth2({ provider: "github" });
 
-			if (pb.authStore.isValid) {
+			if (isAuthenticated) {
 				return <Navigate replace to="/dashboard" />;
 			}
 			// eslint-disable-next-line @typescript-eslint/no-unused-vars

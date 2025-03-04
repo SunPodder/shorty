@@ -3,7 +3,7 @@ import { useNavigate } from "react-router";
 import { Globe, BarChart2, Users, Clock } from "lucide-react";
 import Header from "../components/Header";
 import Footer from "../components/Footer";
-import { pb } from "../hooks/usePB";
+import { useAuth } from "../hooks/useAuth";
 
 function Modal({
 	shortUrl,
@@ -45,6 +45,7 @@ function Home() {
 	const [showModal, setShowModal] = useState(false);
 	const [shortUrl, setShortUrl] = useState("");
 	const navigate = useNavigate();
+	const { isAuthenticated } = useAuth();
 
 	const handleSubmit = (e: FormEvent<HTMLFormElement>) => {
 		e.preventDefault();
@@ -53,7 +54,7 @@ function Home() {
 		const generatedShortUrl = "https://short.ly/abc123";
 		setShortUrl(generatedShortUrl);
 
-		if (pb.authStore.isValid) {
+		if (isAuthenticated) {
 			// Redirect to customization page
 			navigate("/customize", {
 				state: { originalUrl: url, shortUrl: generatedShortUrl },
