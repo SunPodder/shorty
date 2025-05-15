@@ -1,0 +1,22 @@
+# Terraform state and backup files
+terraform.tfstate
+terraform.tfstate.*
+crash.log
+*.tfplan
+*.tfvars
+.terraform/
+
+# LocalStack override files
+localstack_providers_override.tf
+
+# Sensitive or local override files
+*.auto.tfvars
+*.auto.tfvars.json
+
+# Editor and OS files
+*.swp
+*~
+.DS_Store
+.idea/
+.vscode/
+
