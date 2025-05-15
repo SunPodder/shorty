@@ -56,7 +56,8 @@ func Shorten(ctx context.Context, request events.APIGatewayProxyRequest) (events
 
 	if req.Token != nil {
 		var err error
-		userId, err = utils.ValidateJWT(*req.Token)
+		var token = *req.Token
+		_, err = utils.ValidateJWT(token)
 		if err != nil {
 			userId = nil
 		}
