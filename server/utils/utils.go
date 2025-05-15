@@ -5,11 +5,22 @@ import (
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
+	"golang.org/x/crypto/bcrypt"
 )
 
 func HashPassword(password string) (string, error) {
-	// Implement password hashing logic here
-	return password, nil
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
+	if err != nil {
+		return "", err
+	}
+	return string(hashedPassword), nil
+}
+
+// checks if the password matches the hashed password
+// returns true if the password is correct, false otherwise
+func CheckPasswordHash(password, hashedPassword string) bool {
+	err := bcrypt.CompareHashAndPassword([]byte(hashedPassword), []byte(password))
+	return err == nil
 }
 
 func GenerateJWT(userID string) (string, error) {
@@ -24,7 +35,7 @@ func GenerateJWT(userID string) (string, error) {
 	return token.SignedString(jwtSecret)
 }
 
-func ValidateJWT(tokenString string) (*string, error) {
+func ValidateJWT(tokenString string) (string, error) {
 	var jwtSecret = []byte("your-secret-key")
 
 	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
@@ -35,17 +46,17 @@ func ValidateJWT(tokenString string) (*string, error) {
 		return jwtSecret, nil
 	})
 	if err != nil || !token.Valid {
-		return nil, errors.New("invalid token")
+		return "", errors.New("invalid token")
 	}
 
 	claims, ok := token.Claims.(jwt.MapClaims)
 	if !ok {
-		return nil, errors.New("invalid claims")
+		return "", errors.New("invalid claims")
 	}
 
 	userID, ok := claims["sub"].(string)
 	if !ok || userID == "" {
-		return nil, errors.New("user id not found in token")
+		return "", errors.New("user id not found in token")
 	}
-	return &userID, nil
+	return userID, nil
 }

@@ -1,6 +1,8 @@
 module github.com/SunPodder/shorty
 
-go 1.22.2
+go 1.23.0
+
+toolchain go1.23.9
 
 require (
 	github.com/aws/aws-lambda-go v1.48.0 // indirect
@@ -25,4 +27,5 @@ require (
 	github.com/aws/smithy-go v1.22.2 // indirect
 	github.com/golang-jwt/jwt/v5 v5.2.2 // indirect
 	github.com/google/uuid v1.6.0 // indirect
+	golang.org/x/crypto v0.38.0 // indirect
 )

@@ -33,15 +33,9 @@ func Login(context context.Context, request events.APIGatewayProxyRequest) (even
 		}, nil
 	}
 
-	hashedPassword, err := utils.HashPassword(req.Password)
-	if err != nil {
-		return events.APIGatewayProxyResponse{
-			StatusCode: 500,
-			Body:       "Internal server error",
-		}, nil
-	}
+	hashedPassword := user.Password
 
-	if hashedPassword != user.Password {
+	if !utils.CheckPasswordHash(req.Password, hashedPassword) {
 		return events.APIGatewayProxyResponse{
 			StatusCode: 401,
 			Body:       "Invalid email or password",
