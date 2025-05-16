@@ -16,13 +16,13 @@ var (
 )
 
 type URL struct {
-	ShortCode   string  `dynamodbav:"short_code,pk"`
-	OriginalURL string  `dynamodbav:"original_url"`
-	UserID      *string `dynamodbav:"user_id,omitempty"`
-	ExpiryDate  *int64  `dynamodbav:"expiry_date,omitempty"`
-	ViewOnce    *bool   `dynamodbav:"view_once,omitempty"`
-	CreatedAt   string  `dynamodbav:"created_at"`
-	Clicks      int64   `dynamodbav:"clicks"`
+	ShortCode   string  `dynamodbav:"short_code,pk" json:"short_code"`
+	OriginalURL string  `dynamodbav:"original_url" json:"original_url"`
+	UserID      *string `dynamodbav:"user_id,omitempty" json:"user_id,omitempty"`
+	ExpiryDate  *int64  `dynamodbav:"expiry_date,omitempty" json:"expiry_date,omitempty"`
+	ViewOnce    *bool   `dynamodbav:"view_once,omitempty" json:"view_once,omitempty"`
+	CreatedAt   string  `dynamodbav:"created_at" json:"created_at"`
+	Clicks      int64   `dynamodbav:"clicks" json:"clicks"`
 }
 
 // Creates a new URL in DynamoDB

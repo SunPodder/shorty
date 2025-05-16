@@ -41,7 +41,7 @@ func Register(context context.Context, event events.APIGatewayProxyRequest) (eve
 	}
 
 	if err := db.CreateUser(context, user); err != nil {
-		if err == db.DuplicateEmailError {
+		if err == db.ErrDuplicateEmail {
 			return events.APIGatewayProxyResponse{
 				StatusCode: 409,
 				Body:       "Email already exists",

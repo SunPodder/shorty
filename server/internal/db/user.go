@@ -12,15 +12,15 @@ import (
 
 // User represents a user in DynamoDB
 type User struct {
-	ID        string `dynamodbav:"id,pk"`
-	Email     string `dynamodbav:"email"`
-	Password  string `dynamodbav:"password"`
-	CreatedAt string `dynamodbav:"created_at"`
+	ID        string `dynamodbav:"id,pk" json:"id"`
+	Email     string `dynamodbav:"email" json:"email"`
+	Password  string `dynamodbav:"password" json:"password"`
+	CreatedAt string `dynamodbav:"created_at" json:"created_at"`
 }
 
 var (
-	ErrUserNotFound     = errors.New("user not found")
-	DuplicateEmailError = errors.New("duplicate email")
+	ErrUserNotFound   = errors.New("user not found")
+	ErrDuplicateEmail = errors.New("duplicate email")
 )
 
 // CreateUser creates a new user in DynamoDB
@@ -33,7 +33,7 @@ func CreateUser(ctx context.Context, user User) error {
 	// check if the email already exists
 	existingUser, err := GetUserByEmail(ctx, user.Email)
 	if err == nil && existingUser != nil {
-		return DuplicateEmailError
+		return ErrDuplicateEmail
 	}
 
 	_, err = client.PutItem(ctx, &dynamodb.PutItemInput{
