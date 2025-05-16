@@ -5,6 +5,7 @@ go 1.23.0
 toolchain go1.23.9
 
 require (
+	bou.ke/monkey v1.0.2 // indirect
 	github.com/aws/aws-lambda-go v1.48.0 // indirect
 	github.com/aws/aws-sdk-go-v2 v1.36.3 // indirect
 	github.com/aws/aws-sdk-go-v2/aws/protocol/eventstream v1.6.10 // indirect
@@ -25,7 +26,11 @@ require (
 	github.com/aws/aws-sdk-go-v2/service/ssooidc v1.30.1 // indirect
 	github.com/aws/aws-sdk-go-v2/service/sts v1.33.19 // indirect
 	github.com/aws/smithy-go v1.22.2 // indirect
+	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/golang-jwt/jwt/v5 v5.2.2 // indirect
 	github.com/google/uuid v1.6.0 // indirect
+	github.com/pmezard/go-difflib v1.0.0 // indirect
+	github.com/stretchr/testify v1.10.0 // indirect
 	golang.org/x/crypto v0.38.0 // indirect
+	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
