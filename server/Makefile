@@ -1,18 +1,43 @@
+all: authorizer login me register resolve shorten
+
 test:
 	go test ./tests
 
-# build all files under cmd into seperate binaries, put them in the bin dir
-build:
-	@echo "Building all binaries..."
-	@for dir in $(shell find ./cmd -type d); do \
-		if [ "$$dir" = "./cmd" ]; then continue; fi; \
-		module=$$(basename $$dir); \
-		echo "Building $$dir"; \
-		GOOS=linux GOARCH=amd64 CGO_ENABLED=0 go build -o bin/cmd/$$module $$dir/main.go; \
-		(cd bin/cmd && zip ../$$module.zip $$module); \
-	done
-	@echo "All binaries built successfully."
+authorizer:
+	@echo "Building authorizer..."
+	@GOOS=linux GOARCH=amd64 CGO_ENABLED=0 go build -o bin/authorizer ./cmd/authorizer/main.go
+	@zip -j bin/authorizer.zip bin/authorizer
+	@echo "Authorizer built successfully."
 
+login:
+	@echo "Building login..."
+	@GOOS=linux GOARCH=amd64 CGO_ENABLED=0 go build -o bin/login ./cmd/login/main.go
+	@zip -j bin/login.zip bin/login
+	@echo "Login built successfully."
+
+me:
+	@echo "Building me..."
+	@GOOS=linux GOARCH=amd64 CGO_ENABLED=0 go build -o bin/me ./cmd/me/main.go
+	@zip -j bin/me.zip bin/me
+	@echo "Me built successfully."
+
+register:
+	@echo "Building register..."
+	@GOOS=linux GOARCH=amd64 CGO_ENABLED=0 go build -o bin/register ./cmd/register/main.go
+	@zip -j bin/register.zip bin/register
+	@echo "Register built successfully."
+
+resolve:
+	@echo "Building resolve..."
+	@GOOS=linux GOARCH=amd64 CGO_ENABLED=0 go build -o bin/resolve ./cmd/resolve/main.go
+	@zip -j bin/resolve.zip bin/resolve
+	@echo "Resolve built successfully."
+
+shorten:
+	@echo "Building shorten..."
+	@GOOS=linux GOARCH=amd64 CGO_ENABLED=0 go build -o bin/shorten ./cmd/shorten/main.go
+	@zip -j bin/shorten.zip bin/shorten
+	@echo "Shorten built successfully."
 
 clean:
 	@echo "Cleaning up..."
