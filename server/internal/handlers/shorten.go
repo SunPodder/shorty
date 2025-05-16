@@ -38,7 +38,7 @@ func Shorten(ctx context.Context, request events.APIGatewayProxyRequest) (events
 		if err != nil {
 			return events.APIGatewayProxyResponse{
 				StatusCode: 500,
-				Body:       "Internal server error",
+				Body:       `{"error": "` + err.Error() + `"}`,
 			}, nil
 		}
 		if exists {

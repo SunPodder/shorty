@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"context"
+	"log"
 	"strings"
 
 	"github.com/SunPodder/shorty/utils"
@@ -10,6 +11,8 @@ import (
 
 func Authorize(context context.Context, event events.APIGatewayCustomAuthorizerRequest) (events.APIGatewayCustomAuthorizerResponse, error) {
 
+	log.Println("Authorizer invoked")
+	log.Printf("Event: %+v\n", event)
 	token := event.AuthorizationToken
 	if token == "" || !strings.HasPrefix(token, "Bearer ") {
 		return denyPolicy("unauthorized"), nil

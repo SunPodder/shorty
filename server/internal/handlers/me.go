@@ -11,26 +11,27 @@ import (
 // Returns the list of URLs for the authenticated user
 // throws an error if the user is not authenticated
 func Me(context context.Context, request events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
-	userID := request.RequestContext.Authorizer["user_id"].(string)
-	if userID == "" {
+	userID := request.RequestContext.Authorizer["user_id"]
+	if userID == "" || userID == nil {
 		return events.APIGatewayProxyResponse{
 			StatusCode: 400,
-			Body:       "Unauthorized",
+			Body:       `{"error": "User ID not found"}`,
 		}, nil
 	}
 
-	urls, err := db.ListUserURLs(context, userID)
+	urls, err := db.ListUserURLs(context, userID.(string))
 	if err != nil {
 		return events.APIGatewayProxyResponse{
 			StatusCode: 500,
-			Body:       "Internal server error",
+			Body:       `{"error": "` + err.Error() + `"}`,
 		}, nil
 	}
+
 	responseBody, err := json.Marshal(urls)
 	if err != nil {
 		return events.APIGatewayProxyResponse{
 			StatusCode: 500,
-			Body:       "Internal server error",
+			Body:       `{"error": "` + err.Error() + `"}`,
 		}, nil
 	}
 	return events.APIGatewayProxyResponse{

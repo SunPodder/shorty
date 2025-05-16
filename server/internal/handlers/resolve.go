@@ -14,7 +14,7 @@ func Resolve(context context.Context, request events.APIGatewayProxyRequest) (ev
 	if err != nil {
 		return events.APIGatewayProxyResponse{
 			StatusCode: 500,
-			Body:       "Internal server error",
+			Body:       `{"error": "` + err.Error() + `"}`,
 		}, nil
 	}
 
@@ -30,7 +30,7 @@ func Resolve(context context.Context, request events.APIGatewayProxyRequest) (ev
 	if err != nil {
 		return events.APIGatewayProxyResponse{
 			StatusCode: 500,
-			Body:       "Internal server error",
+			Body:       `{"error": "` + err.Error() + `"}`,
 		}, nil
 	}
 

@@ -29,7 +29,7 @@ func Register(context context.Context, event events.APIGatewayProxyRequest) (eve
 	if err != nil {
 		return events.APIGatewayProxyResponse{
 			StatusCode: 500,
-			Body:       "Internal server error",
+			Body:       `{"error": "Failed to hash password"}`,
 		}, nil
 	}
 
@@ -49,7 +49,7 @@ func Register(context context.Context, event events.APIGatewayProxyRequest) (eve
 		}
 		return events.APIGatewayProxyResponse{
 			StatusCode: 500,
-			Body:       "Internal server error",
+			Body:       `{"error": "` + err.Error() + `"}`,
 		}, nil
 	}
 
@@ -57,7 +57,7 @@ func Register(context context.Context, event events.APIGatewayProxyRequest) (eve
 	if err != nil {
 		return events.APIGatewayProxyResponse{
 			StatusCode: 500,
-			Body:       "Failed to generate token",
+			Body:       `{"error": "Failed to generate token"}`,
 		}, nil
 	}
 

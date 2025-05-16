@@ -20,7 +20,7 @@ func Login(context context.Context, request events.APIGatewayProxyRequest) (even
 	if err := json.Unmarshal([]byte(request.Body), &req); err != nil {
 		return events.APIGatewayProxyResponse{
 			StatusCode: 400,
-			Body:       "Invalid request body",
+			Body:       `{"error": "Invalid request body"}`,
 		}, nil
 	}
 
@@ -29,7 +29,7 @@ func Login(context context.Context, request events.APIGatewayProxyRequest) (even
 	if err != nil {
 		return events.APIGatewayProxyResponse{
 			StatusCode: 401,
-			Body:       "Invalid email or password",
+			Body:       `{"error": "Invalid email or password"}`,
 		}, nil
 	}
 
@@ -38,7 +38,7 @@ func Login(context context.Context, request events.APIGatewayProxyRequest) (even
 	if !utils.CheckPasswordHash(req.Password, hashedPassword) {
 		return events.APIGatewayProxyResponse{
 			StatusCode: 401,
-			Body:       "Invalid email or password",
+			Body:       `{"error": "Invalid email or password"}`,
 		}, nil
 	}
 
@@ -47,7 +47,7 @@ func Login(context context.Context, request events.APIGatewayProxyRequest) (even
 	if err != nil {
 		return events.APIGatewayProxyResponse{
 			StatusCode: 500,
-			Body:       "Failed to generate token",
+			Body:       `{"error": "Failed to generate token"}`,
 		}, nil
 	}
 
