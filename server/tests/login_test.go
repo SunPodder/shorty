@@ -7,7 +7,7 @@ import (
 
 	"bou.ke/monkey"
 	"github.com/SunPodder/shorty/internal/db"
-	"github.com/SunPodder/shorty/internal/handlers"
+	"github.com/SunPodder/shorty/internal/handler"
 	"github.com/SunPodder/shorty/utils"
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/stretchr/testify/assert"
@@ -15,7 +15,7 @@ import (
 
 func TestLogin_Success(t *testing.T) {
 	ctx := context.Background()
-	body, _ := json.Marshal(handlers.LoginRequest{Email: "test@example.com", Password: "password"})
+	body, _ := json.Marshal(handler.LoginRequest{Email: "test@example.com", Password: "password"})
 	req := events.APIGatewayProxyRequest{Body: string(body)}
 
 	patchGetUserByEmail := monkey.Patch(db.GetUserByEmail, func(context.Context, string) (*db.User, error) {
@@ -33,7 +33,7 @@ func TestLogin_Success(t *testing.T) {
 	})
 	defer patchGenerateJWT.Unpatch()
 
-	resp, err := handlers.Login(ctx, req)
+	resp, err := handler.Login(ctx, req)
 	assert.NoError(t, err)
 	assert.Contains(t, resp.Body, "jwt-token")
 	assert.Equal(t, 200, resp.StatusCode)
@@ -42,13 +42,13 @@ func TestLogin_Success(t *testing.T) {
 func TestLogin_InvalidBody(t *testing.T) {
 	ctx := context.Background()
 	req := events.APIGatewayProxyRequest{Body: "not-json"}
-	resp, _ := handlers.Login(ctx, req)
+	resp, _ := handler.Login(ctx, req)
 	assert.Equal(t, 400, resp.StatusCode)
 }
 
 func TestLogin_InvalidPassword(t *testing.T) {
 	ctx := context.Background()
-	body, _ := json.Marshal(handlers.LoginRequest{Email: "test@example.com", Password: "wrong-password"})
+	body, _ := json.Marshal(handler.LoginRequest{Email: "test@example.com", Password: "wrong-password"})
 	req := events.APIGatewayProxyRequest{Body: string(body)}
 
 	patchGetUserByEmail := monkey.Patch(db.GetUserByEmail, func(context.Context, string) (*db.User, error) {
@@ -61,13 +61,13 @@ func TestLogin_InvalidPassword(t *testing.T) {
 	})
 	defer patchCheckPasswordHash.Unpatch()
 
-	resp, _ := handlers.Login(ctx, req)
+	resp, _ := handler.Login(ctx, req)
 	assert.Equal(t, 401, resp.StatusCode)
 }
 
 func TestLogin_UserNotFound(t *testing.T) {
 	ctx := context.Background()
-	body, _ := json.Marshal(handlers.LoginRequest{Email: "nonexistent@example.com", Password: "password"})
+	body, _ := json.Marshal(handler.LoginRequest{Email: "nonexistent@example.com", Password: "password"})
 	req := events.APIGatewayProxyRequest{Body: string(body)}
 
 	patchGetUserByEmail := monkey.Patch(db.GetUserByEmail, func(context.Context, string) (*db.User, error) {
@@ -75,6 +75,6 @@ func TestLogin_UserNotFound(t *testing.T) {
 	})
 	defer patchGetUserByEmail.Unpatch()
 
-	resp, _ := handlers.Login(ctx, req)
+	resp, _ := handler.Login(ctx, req)
 	assert.Equal(t, 401, resp.StatusCode)
 }

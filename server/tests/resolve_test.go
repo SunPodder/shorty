@@ -6,7 +6,7 @@ import (
 
 	"bou.ke/monkey"
 	"github.com/SunPodder/shorty/internal/db"
-	"github.com/SunPodder/shorty/internal/handlers"
+	"github.com/SunPodder/shorty/internal/handler"
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/stretchr/testify/assert"
 )
@@ -26,7 +26,7 @@ func TestResolve_Found(t *testing.T) {
 	})
 	defer patchIncrementClicks.Unpatch()
 
-	resp, err := handlers.Resolve(ctx, request)
+	resp, err := handler.Resolve(ctx, request)
 	assert.NoError(t, err)
 	assert.Equal(t, 302, resp.StatusCode)
 	assert.Equal(t, "https://example.com", resp.Headers["Location"])
@@ -42,7 +42,7 @@ func TestResolve_NotFound(t *testing.T) {
 	})
 	defer patchGetURL.Unpatch()
 
-	resp, _ := handlers.Resolve(ctx, request)
+	resp, _ := handler.Resolve(ctx, request)
 	assert.Equal(t, 404, resp.StatusCode)
 }
 
@@ -56,7 +56,7 @@ func TestResolve_DBError(t *testing.T) {
 	})
 	defer patchGetURL.Unpatch()
 
-	resp, _ := handlers.Resolve(ctx, request)
+	resp, _ := handler.Resolve(ctx, request)
 	assert.Equal(t, 500, resp.StatusCode)
 	assert.Contains(t, resp.Body, "Internal server error")
 }
@@ -76,6 +76,6 @@ func TestResolve_IncrementClicksError(t *testing.T) {
 	})
 	defer patchIncrementClicks.Unpatch()
 
-	resp, _ := handlers.Resolve(ctx, request)
+	resp, _ := handler.Resolve(ctx, request)
 	assert.Equal(t, 500, resp.StatusCode)
 }

@@ -7,7 +7,7 @@ import (
 
 	"bou.ke/monkey"
 	"github.com/SunPodder/shorty/internal/db"
-	"github.com/SunPodder/shorty/internal/handlers"
+	"github.com/SunPodder/shorty/internal/handler"
 	"github.com/SunPodder/shorty/utils"
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/stretchr/testify/assert"
@@ -15,7 +15,7 @@ import (
 
 func TestRegister_Success(t *testing.T) {
 	ctx := context.Background()
-	body, _ := json.Marshal(handlers.RegisterRequest{Email: "test@example.com", Password: "password"})
+	body, _ := json.Marshal(handler.RegisterRequest{Email: "test@example.com", Password: "password"})
 	req := events.APIGatewayProxyRequest{Body: string(body)}
 
 	patchHash := monkey.Patch(utils.HashPassword, func(string) (string, error) {
@@ -33,7 +33,7 @@ func TestRegister_Success(t *testing.T) {
 	})
 	defer patchGenerateJWT.Unpatch()
 
-	resp, err := handlers.Register(ctx, req)
+	resp, err := handler.Register(ctx, req)
 	assert.NoError(t, err)
 	assert.Equal(t, 201, resp.StatusCode)
 }
@@ -41,13 +41,13 @@ func TestRegister_Success(t *testing.T) {
 func TestRegister_InvalidBody(t *testing.T) {
 	ctx := context.Background()
 	req := events.APIGatewayProxyRequest{Body: "not-json"}
-	resp, _ := handlers.Register(ctx, req)
+	resp, _ := handler.Register(ctx, req)
 	assert.Equal(t, 400, resp.StatusCode)
 }
 
 func TestRegister_DuplicateEmail(t *testing.T) {
 	ctx := context.Background()
-	body, _ := json.Marshal(handlers.RegisterRequest{Email: "existing@example.com", Password: "password"})
+	body, _ := json.Marshal(handler.RegisterRequest{Email: "existing@example.com", Password: "password"})
 	req := events.APIGatewayProxyRequest{Body: string(body)}
 
 	patchHash := monkey.Patch(utils.HashPassword, func(string) (string, error) {
@@ -60,6 +60,6 @@ func TestRegister_DuplicateEmail(t *testing.T) {
 	})
 	defer patchCreateUser.Unpatch()
 
-	resp, _ := handlers.Register(ctx, req)
+	resp, _ := handler.Register(ctx, req)
 	assert.Equal(t, 409, resp.StatusCode)
 }

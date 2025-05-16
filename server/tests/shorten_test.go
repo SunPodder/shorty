@@ -7,7 +7,7 @@ import (
 
 	"bou.ke/monkey"
 	"github.com/SunPodder/shorty/internal/db"
-	"github.com/SunPodder/shorty/internal/handlers"
+	"github.com/SunPodder/shorty/internal/handler"
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
@@ -15,7 +15,7 @@ import (
 
 func TestShorten_Success(t *testing.T) {
 	ctx := context.Background()
-	body, _ := json.Marshal(handlers.ShortenRequest{OriginalURL: "https://example.com"})
+	body, _ := json.Marshal(handler.ShortenRequest{OriginalURL: "https://example.com"})
 	request := events.APIGatewayProxyRequest{Body: string(body)}
 
 	// We can't patch the private function directly, but we can patch db.GetURL which it calls
@@ -37,7 +37,7 @@ func TestShorten_Success(t *testing.T) {
 
 	defer patchUUID.Unpatch()
 
-	resp, err := handlers.Shorten(ctx, request)
+	resp, err := handler.Shorten(ctx, request)
 	assert.NoError(t, err)
 	assert.Equal(t, 200, resp.StatusCode)
 }
@@ -45,14 +45,14 @@ func TestShorten_Success(t *testing.T) {
 func TestShorten_InvalidBody(t *testing.T) {
 	ctx := context.Background()
 	request := events.APIGatewayProxyRequest{Body: "not-json"}
-	resp, _ := handlers.Shorten(ctx, request)
+	resp, _ := handler.Shorten(ctx, request)
 	assert.Equal(t, 400, resp.StatusCode)
 }
 
 func TestShorten_CustomCodeExists(t *testing.T) {
 	ctx := context.Background()
 	customCode := "existing"
-	body, _ := json.Marshal(handlers.ShortenRequest{
+	body, _ := json.Marshal(handler.ShortenRequest{
 		OriginalURL: "https://example.com",
 		CustomCode:  &customCode,
 	})
@@ -63,14 +63,14 @@ func TestShorten_CustomCodeExists(t *testing.T) {
 	})
 	defer patchGetURL.Unpatch()
 
-	resp, _ := handlers.Shorten(ctx, request)
+	resp, _ := handler.Shorten(ctx, request)
 	assert.Equal(t, 400, resp.StatusCode)
 	assert.Contains(t, resp.Body, "Custom code already exists")
 }
 
 func TestShorten_DBError(t *testing.T) {
 	ctx := context.Background()
-	body, _ := json.Marshal(handlers.ShortenRequest{OriginalURL: "https://example.com"})
+	body, _ := json.Marshal(handler.ShortenRequest{OriginalURL: "https://example.com"})
 	request := events.APIGatewayProxyRequest{Body: string(body)}
 
 	patchGetURL := monkey.Patch(db.GetURL, func(context.Context, string) (*db.URL, error) {
@@ -89,7 +89,7 @@ func TestShorten_DBError(t *testing.T) {
 	})
 	defer patchUUID.Unpatch()
 
-	resp, _ := handlers.Shorten(ctx, request)
+	resp, _ := handler.Shorten(ctx, request)
 	assert.Equal(t, 500, resp.StatusCode)
 	assert.Contains(t, resp.Body, "Failed to create URL")
 }

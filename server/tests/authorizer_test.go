@@ -5,7 +5,7 @@ import (
 	"testing"
 
 	"bou.ke/monkey"
-	"github.com/SunPodder/shorty/internal/handlers"
+	"github.com/SunPodder/shorty/internal/handler"
 	"github.com/SunPodder/shorty/utils"
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/stretchr/testify/assert"
@@ -21,7 +21,7 @@ func TestAuthorize_ValidToken(t *testing.T) {
 	})
 	defer patchValidateJWT.Unpatch()
 
-	resp, err := handlers.Authorize(context.Background(), event)
+	resp, err := handler.Authorize(context.Background(), event)
 	assert.NoError(t, err)
 	assert.Equal(t, "user-id", resp.PrincipalID)
 	assert.Equal(t, "Allow", resp.PolicyDocument.Statement[0].Effect)
@@ -37,7 +37,7 @@ func TestAuthorize_InvalidToken(t *testing.T) {
 	})
 	defer patchValidateJWT.Unpatch()
 
-	resp, _ := handlers.Authorize(context.Background(), event)
+	resp, _ := handler.Authorize(context.Background(), event)
 	assert.Equal(t, "Deny", resp.PolicyDocument.Statement[0].Effect)
 }
 
@@ -47,7 +47,7 @@ func TestAuthorize_MissingToken(t *testing.T) {
 		AuthorizationToken: "",
 		MethodArn:          "arn:aws:execute-api:region:account-id:api-id/stage/GET/resource",
 	}
-	resp, _ := handlers.Authorize(context.Background(), emptyEvent)
+	resp, _ := handler.Authorize(context.Background(), emptyEvent)
 	assert.Equal(t, "Deny", resp.PolicyDocument.Statement[0].Effect)
 	assert.Equal(t, "unauthorized", resp.Context["error"])
 
@@ -56,7 +56,7 @@ func TestAuthorize_MissingToken(t *testing.T) {
 		AuthorizationToken: "malformed.token.no.bearer",
 		MethodArn:          "arn:aws:execute-api:region:account-id:api-id/stage/GET/resource",
 	}
-	resp2, _ := handlers.Authorize(context.Background(), malformedEvent)
+	resp2, _ := handler.Authorize(context.Background(), malformedEvent)
 	assert.Equal(t, "Deny", resp2.PolicyDocument.Statement[0].Effect)
 	assert.Equal(t, "unauthorized", resp2.Context["error"])
 }
