@@ -52,14 +52,15 @@ func Shorten(ctx context.Context, request events.APIGatewayProxyRequest) (events
 		shortCode = uuid.New().String()[:6]
 	}
 
-	var userId *string
+	var userId *string = nil
 
 	if req.Token != nil {
-		var err error
 		var token = *req.Token
-		_, err = utils.ValidateJWT(token)
+		userid, err := utils.ValidateJWT(token)
 		if err != nil {
 			userId = nil
+		} else {
+			userId = &userid
 		}
 	}
 
