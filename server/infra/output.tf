@@ -9,8 +9,8 @@ output "rest_api_root_resource_id" {
 }
 
 output "api_invoke_url" {
-  description = "Invoke URL for the deployed API Gateway stage."
-  value       = "https://${aws_api_gateway_rest_api.shorty_api.id}.execute-api.${data.aws_region.current.name}.amazonaws.com/${aws_api_gateway_stage.dev.stage_name}"
+  description = "LocalStack API Gateway invoke URL."
+  value       = "http://${aws_api_gateway_rest_api.shorty_api.id}.execute-api.localhost.localstack.cloud:4566/${aws_api_gateway_stage.dev.stage_name}/"
 }
 
 output "stage_name" {
