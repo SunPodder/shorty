@@ -1,40 +1,97 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import Chart from "chart.js/auto";
 
-type Url = {
-	id: string;
-	originalUrl: string;
-	shortUrl: string;
-	clicks: number;
-	createdAt: string;
-	expiresAt: string | null;
-};
+function generateClickData(clicks: ClickData[]): [number[], string[]] {
+	const last7Days = Array.from({ length: 7 }, (_, i) => {
+		const d = new Date();
+		d.setDate(d.getDate() - i);
+		return d;
+	});
 
-export default function Analytics({ urls }: { urls: Url[] }) {
+	const clickCount = last7Days.map((d) => {
+		const date = d.toISOString().split("T")[0];
+		const count = clicks.filter((c) => c.created === date).length;
+		return count;
+	});
+
+	const day = last7Days.map((d) => {
+		return d.toLocaleDateString("en-US", { weekday: "short" });
+	});
+
+	return [clickCount, day];
+}
+
+function calculateSevenDayGrowth(clicks: ClickData[]): {
+	growth: number;
+	isPositive: boolean | null;
+	formattedGrowth: string;
+} {
+	const today = new Date();
+
+	// Get dates for current 7 days and previous 7 days
+	const current7DaysDates = Array.from({ length: 7 }, (_, i) => {
+		const d = new Date(today);
+		d.setDate(d.getDate() - i);
+		return d.toISOString().split("T")[0];
+	});
+
+	const previous7DaysDates = Array.from({ length: 7 }, (_, i) => {
+		const d = new Date(today);
+		d.setDate(d.getDate() - (i + 7));
+		return d.toISOString().split("T")[0];
+	});
+
+	// Count clicks for both periods
+	const current7DaysClicks = clicks.filter((click) =>
+		current7DaysDates.includes(click.created),
+	).length;
+
+	const previous7DaysClicks = clicks.filter((click) =>
+		previous7DaysDates.includes(click.created),
+	).length;
+
+	// Calculate growth rate
+	// If previous period had 0 clicks, set growth to 100% if there are clicks now
+	let growthRate = 0;
+
+	if (previous7DaysClicks === 0) {
+		growthRate = current7DaysClicks > 0 ? 100 : 0;
+	} else {
+		growthRate =
+			((current7DaysClicks - previous7DaysClicks) / previous7DaysClicks) *
+			100;
+	}
+
+	// Format to one decimal place
+	const formattedGrowth = `${Math.abs(growthRate).toFixed(1)}%`;	
+
+	return {
+		growth: growthRate,
+		isPositive: growthRate == 0 ? null : growthRate > 0,
+		formattedGrowth,
+	};
+}
+
+export default function Analytics({ urls }: { urls: URLData[] }) {
 	const chartRef = useRef<HTMLCanvasElement>(null);
 	const chartInstance = useRef<Chart | null>(null);
+	const [growthData, setGrowthData] = useState<{
+		growth: number;
+		isPositive: boolean | null;
+		formattedGrowth: string;
+	}>({
+		growth: 0,
+		isPositive: null,
+		formattedGrowth: "0%",
+	});
+	const [clicks, setClicks] = useState<ClickData[]>([]);
 
-	const user = {
-		username: "JohnDoe",
-		totalUrls: 3,
-		totalClicks: 209,
-	};
-
-	// Generate mock data for the last 7 days
-	const generateClickData = () => {
-		const dates = [];
-		const clickData = [];
-
-		for (let i = 6; i >= 0; i--) {
-			const date = new Date();
-			date.setDate(date.getDate() - i);
-			dates.push(date.toLocaleDateString("en-US", { weekday: "short" }));
-			// Generate random click data between 10-50
-			clickData.push(Math.floor(Math.random() * 40) + 10);
+	useEffect(() => {
+		if (clicks.length > 0) {
+			const growth = calculateSevenDayGrowth(clicks);
+			setGrowthData(growth);
 		}
-
-		return { dates, clickData };
-	};
+	}, [clicks]);
 
 	useEffect(() => {
 		if (chartRef.current) {
@@ -43,18 +100,18 @@ export default function Analytics({ urls }: { urls: Url[] }) {
 				chartInstance.current.destroy();
 			}
 
-			const { dates, clickData } = generateClickData();
+			const [clickCount, days] = generateClickData(clicks);
 
 			const ctx = chartRef.current.getContext("2d");
 			if (ctx) {
 				chartInstance.current = new Chart(ctx, {
 					type: "line",
 					data: {
-						labels: dates,
+						labels: days,
 						datasets: [
 							{
 								label: "Total Clicks",
-								data: clickData,
+								data: clickCount,
 								fill: true,
 								backgroundColor: "rgba(59, 130, 246, 0.1)",
 								borderColor: "rgba(59, 130, 246, 0.8)",
@@ -112,7 +169,7 @@ export default function Analytics({ urls }: { urls: Url[] }) {
 				chartInstance.current.destroy();
 			}
 		};
-	}, [urls]); // Re-render chart when urls change
+	}, [urls, clicks]); // Re-render chart when urls change
 
 	return (
 		<div className="bg-white p-6 rounded-lg shadow-md">
@@ -153,14 +210,14 @@ export default function Analytics({ urls }: { urls: Url[] }) {
 					</h3>
 					<p className="font-medium truncate">
 						{urls.sort((a, b) => b.clicks - a.clicks)[0]
-							?.shortUrl || "None"}
+							?.shortCode || "None"}
 					</p>
 				</div>
 				<div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
 					<h3 className="text-sm text-gray-500 mb-1">
 						Total Clicks Today
 					</h3>
-					<p className="font-medium">24</p>
+					<p className="font-medium">{clicks.length}</p>
 				</div>
 				<div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
 					<h3 className="text-sm text-gray-500 mb-1">
@@ -168,13 +225,20 @@ export default function Analytics({ urls }: { urls: Url[] }) {
 					</h3>
 					<p className="font-medium">
 						{urls.length > 0
-							? Math.round(user.totalClicks / urls.length)
+							? Math.round(clicks.length / urls.length)
 							: 0}
 					</p>
 				</div>
 				<div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
-					<h3 className="text-sm text-gray-500 mb-1">Growth</h3>
-					<p className="font-medium text-green-600">+12.5%</p>
+					<h3 className="text-sm text-gray-500 mb-1">
+						Growth (7-day)
+					</h3>
+					<p
+						className={`font-medium ${growthData.isPositive == null ? "text-gray-400" : growthData.isPositive ? "text-green-600" : "text-red-600"}`}
+					>
+						{growthData.isPositive == null ? "" : growthData.isPositive ? "+" : "-"}
+						{growthData.formattedGrowth}
+					</p>
 				</div>
 			</div>
 		</div>

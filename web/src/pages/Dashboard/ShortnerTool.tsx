@@ -1,11 +1,23 @@
 import { Check, Clipboard, Globe } from "lucide-react";
 import { FormEvent, useState } from "react";
+import { useAuth } from "../../hooks/useAuth";
 
-export default function ShortnerTool() {
+const API_ENDPOINT = import.meta.env.VITE_API_ENDPOINT;
+
+export default function ShortnerTool({
+	setUrls,
+}: {
+	setUrls: (cb: (prev: URLData[]) => URLData[]) => void;
+}) {
 	const [url, setUrl] = useState("");
 	const [customAlias, setCustomAlias] = useState("");
 	const [newShortUrl, setNewShortUrl] = useState("");
+	const [expiryDate, setExpiryDate] = useState(""); // Store as YYYY-MM-DD string from input type="date"
+	const [isOneTimeView, setIsOneTimeView] = useState(false);
 	const [showCopied, setShowCopied] = useState(false);
+	const [error, setError] = useState(""); // For displaying errors
+
+	const { authToken } = useAuth(); // Get authToken
 
 	const copyToClipboard = (text: string) => {
 		navigator.clipboard.writeText(text).then(() => {
@@ -14,24 +26,75 @@ export default function ShortnerTool() {
 		});
 	};
 
-	const handleSubmit = (e: FormEvent<HTMLFormElement>) => {
+	const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
 		e.preventDefault();
-		// This would be an API call in a real application
-		const newUrl = {
-			// id: (urls.length + 1).toString(),
-			originalUrl: url,
-			shortUrl: customAlias
-				? `shorty.io/${customAlias}`
-				: `shorty.io/${Math.random().toString(36).substr(2, 6)}`,
-			clicks: 0,
-			createdAt: new Date().toISOString(),
-			expiresAt: null,
+		setError(""); // Clear previous errors
+
+		const requestBody: {
+			original_url: string;
+			custom_code?: string;
+			expiry_date?: number; // Unix timestamp in seconds
+			view_once?: boolean;
+			token?: string;
+		} = {
+			original_url: url,
 		};
 
-		setNewShortUrl(newUrl.shortUrl);
-		// setUrls([...urls, newUrl]);
-		setUrl("");
-		setCustomAlias("");
+		if (customAlias) {
+			requestBody.custom_code = customAlias;
+		}
+		if (expiryDate) {
+			// Convert YYYY-MM-DD to Unix timestamp (seconds)
+			requestBody.expiry_date = Math.floor(
+				new Date(expiryDate).getTime() / 1000
+			);
+		}
+		if (isOneTimeView) {
+			requestBody.view_once = isOneTimeView;
+		}
+		if (authToken) {
+			requestBody.token = authToken; // Include token if user is authenticated
+		}
+
+		try {
+			const response = await fetch(`${API_ENDPOINT}new`, {
+				method: "POST",
+				headers: {
+					"Content-Type": "application/json",
+					...(authToken ? { Authorization: `Bearer ${authToken}` } : {}),
+				},
+				body: JSON.stringify(requestBody),
+			});
+
+			if (!response.ok) {
+				const errorData = await response
+					.json()
+					.catch(() => ({ message: "Failed to shorten URL" }));
+				throw new Error(errorData.message || errorData.error || "Failed to shorten URL");
+			}
+
+			const data: URLData = await response.json();
+      // Construct the display URL based on VITE_API_ENDPOINT and the returned ShortCode
+      // Ensuring the base URL for the short link is correct, not necessarily the API endpoint itself for shortening.
+      // This might need adjustment based on how resolved URLs are structured.
+      // For now, let's assume the API_ENDPOINT base is also where short URLs are resolved.
+      const baseShortUrl = API_ENDPOINT.replace(/\/new\/?$/, "/"); // Attempt to get base path
+			const displayShortUrl = `${baseShortUrl}${data.shortCode}`;
+
+			setUrls((prev: URLData[]) => [...prev, { ...data, displayShortURL: displayShortUrl }]);
+			setNewShortUrl(displayShortUrl);
+
+			// Reset form
+			setUrl("");
+			setCustomAlias("");
+			setExpiryDate("");
+			setIsOneTimeView(false);
+		} catch (err) {
+			console.error(err);
+			setError(
+				err instanceof Error ? err.message : "An unknown error occurred."
+			);
+		}
 	};
 
 	return (
@@ -39,10 +102,16 @@ export default function ShortnerTool() {
 			<h2 className="text-xl font-semibold text-gray-800 mb-4">
 				Shorten a New URL
 			</h2>
+			{error && (
+				<div className="mb-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded-md">
+					<p>{error}</p>
+				</div>
+			)}
 			<form
 				onSubmit={handleSubmit}
-				className="space-y-4 md:space-y-0 md:grid md:grid-cols-12 md:gap-4"
+				className="space-y-4 md:space-y-4 md:grid md:grid-cols-12 md:gap-4"
 			>
+				{/* First row */}
 				<div className="md:col-span-6">
 					<label
 						htmlFor="url"
@@ -69,7 +138,7 @@ export default function ShortnerTool() {
 					</div>
 				</div>
 
-				<div className="md:col-span-4">
+				<div className="md:col-span-6">
 					<label
 						htmlFor="custom-alias"
 						className="block text-sm font-medium text-gray-700 mb-1"
@@ -78,7 +147,7 @@ export default function ShortnerTool() {
 					</label>
 					<div className="flex rounded-md shadow-sm">
 						<span className="inline-flex items-center px-3 rounded-l-md border border-r-0 border-gray-300 bg-gray-50 text-gray-500 text-sm">
-							shorty.io/
+							{API_ENDPOINT.replace(/\/(new|dev)\/$/, "/")} {/* Display base URL */}
 						</span>
 						<input
 							type="text"
@@ -92,10 +161,58 @@ export default function ShortnerTool() {
 					</div>
 				</div>
 
-				<div className="md:col-span-2 md:flex md:items-end">
+				{/* Second row */}
+				<div className="md:col-span-6">
+					<label
+						htmlFor="expiry-date"
+						className="block text-sm font-medium text-gray-700 mb-1"
+					>
+						Expiry date (optional)
+					</label>
+					<div className="flex rounded-md shadow-sm">
+						<input
+							type="date"
+							name="expiry-date"
+							id="expiry-date"
+							className="focus:ring-blue-500 focus:border-blue-500 block w-full rounded-md sm:text-sm border-gray-300 py-2 border placeholder-shown:text-gray-500 px-2"
+							value={expiryDate}
+							onChange={(e) => setExpiryDate(e.target.value)}
+							min={new Date().toISOString().split("T")[0]}
+						/>
+					</div>
+				</div>
+
+				<div className="md:col-span-4 lg:col-span-3 2xl:col-span-2">
+					<div className="flex flex-col">
+						<label className="block text-sm font-medium text-gray-700 mb-1">
+							One-time view (optional)
+						</label>
+						<div className="flex items-center h-full py-2">
+							<input
+								type="checkbox"
+								id="one-time-view"
+								name="one-time-view"
+								className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+								checked={isOneTimeView}
+								onChange={(e) =>
+									setIsOneTimeView(e.target.checked)
+								}
+							/>
+							<label
+								htmlFor="one-time-view"
+								className="ml-2 block text-sm text-gray-900"
+							>
+								Self-destruct after first view
+							</label>
+						</div>
+					</div>
+				</div>
+
+				{/* Button row */}
+				<div className=" mt-4 md:col-span-12 md:flex md:items-end">
 					<button
 						type="submit"
-						className="w-full inline-flex justify-center items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 md:mt-7"
+						className="w-full inline-flex justify-center items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 md:w-auto"
 					>
 						Shorten
 					</button>
@@ -118,7 +235,13 @@ export default function ShortnerTool() {
 							{showCopied ? "Copied!" : "Copy"}
 						</button>
 					</div>
-					<a href="#" className="text-blue-600 hover:underline">
+					{/* Make the link clickable and open in a new tab */}
+					<a
+						href={newShortUrl}
+						target="_blank"
+						rel="noopener noreferrer"
+						className="text-blue-600 hover:underline block break-all"
+					>
 						{newShortUrl}
 					</a>
 				</div>

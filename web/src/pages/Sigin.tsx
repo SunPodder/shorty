@@ -1,16 +1,15 @@
 import { useState, FormEvent, useEffect } from "react";
-import { Link, Navigate } from "react-router";
+import { Link, Navigate } from "react-router-dom";
 import {
 	Mail,
 	Lock,
-	Github,
 	ArrowLeft,
 	EyeOff,
 	Eye,
 	XCircle,
 	CheckCircle,
 } from "lucide-react";
-import { pb, useAuth } from "../hooks/useAuth";
+import { useAuth } from "../hooks/useAuth";
 
 function Signin() {
 	const [email, setEmail] = useState("");
@@ -24,30 +23,25 @@ function Signin() {
 		null,
 	);
 
-	const { isAuthenticated } = useAuth();
+	const { login, register, isAuthenticated } = useAuth();
 
-	// Validate email on change
 	useEffect(() => {
 		if (email === "") {
 			setIsEmailValid(null);
 			return;
 		}
-
-		const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+		const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
 		setIsEmailValid(emailRegex.test(email));
 	}, [email]);
 
-	// Validate password on change (minimum 8 characters)
 	useEffect(() => {
 		if (password === "") {
 			setIsPasswordValid(null);
 			return;
 		}
-
 		setIsPasswordValid(password.length >= 8);
 	}, [password]);
 
-	// Redirect to /dashboard if user is already signed in
 	if (isAuthenticated) {
 		return <Navigate replace to="/dashboard" />;
 	}
@@ -56,22 +50,14 @@ function Signin() {
 		e.preventDefault();
 		setError("");
 		setIsLoading(true);
-
 		try {
-			// Call login API or auth function here
-			console.log("Logging in with:", email, password);
-
-			const data = await pb
-				.collection("users")
-				.authWithPassword(email, password);
-
-			console.log(data);
-			if (isAuthenticated) {
-				return <Navigate replace to="/dashboard" />;
-			}
-			// eslint-disable-next-line @typescript-eslint/no-unused-vars
-		} catch (_err) {
-			setError("Invalid email or password");
+			await login({ email, password });
+		} catch (err) {
+			setError(
+				err instanceof Error
+					? err.message
+					: "Invalid email or password",
+			);
 		} finally {
 			setIsLoading(false);
 		}
@@ -81,48 +67,14 @@ function Signin() {
 		e.preventDefault();
 		setError("");
 		setIsLoading(true);
-
 		try {
-			// Call register API or auth function here
-			const data = {
-				password: password,
-				passwordConfirm: password,
-				email: email,
-				name: email.split("@")[0],
-			};
-			const record = await pb.collection("users").create(data);
-
-			if (record?.id) {
-				await pb.collection("users").authWithPassword(email, password);
-			}
-
-			if (isAuthenticated) {
-				return <Navigate replace to="/dashboard" />;
-			}
-			// eslint-disable-next-line @typescript-eslint/no-unused-vars
-		} catch (_err) {
-			setError("Registration failed. Email might already be in use.");
-		} finally {
-			setIsLoading(false);
-		}
-	};
-
-	const handleGitHubLogin = async () => {
-		setError("");
-		setIsLoading(true);
-
-		try {
-			// GitHub OAuth login logic here
-			console.log("GitHub login");
-
-			await pb.collection("users").authWithOAuth2({ provider: "github" });
-
-			if (isAuthenticated) {
-				return <Navigate replace to="/dashboard" />;
-			}
-			// eslint-disable-next-line @typescript-eslint/no-unused-vars
-		} catch (_err) {
-			setError("GitHub login failed");
+			await register({ email, password });
+		} catch (err) {
+			setError(
+				err instanceof Error
+					? err.message
+					: "Registration failed. Email might already be in use.",
+			);
 		} finally {
 			setIsLoading(false);
 		}
@@ -278,7 +230,7 @@ function Signin() {
 						<div className="flex flex-col md:flex-row gap-4 mb-6">
 							<button
 								type="submit"
-								className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-lg flex-1 transition-colors"
+								className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-lg flex-1 transition-colors cursor-pointer"
 								onClick={handleLogin}
 								disabled={isLoading}
 							>
@@ -286,7 +238,7 @@ function Signin() {
 							</button>
 							<button
 								type="submit"
-								className="bg-gray-800 hover:bg-gray-900 text-white font-semibold py-2 px-4 rounded-lg flex-1 transition-colors"
+								className="bg-gray-800 hover:bg-gray-900 text-white font-semibold py-2 px-4 rounded-lg flex-1 transition-colors cursor-pointer"
 								onClick={handleRegister}
 								disabled={isLoading}
 							>
@@ -294,37 +246,16 @@ function Signin() {
 							</button>
 						</div>
 
-						<div className="relative flex items-center justify-center my-6">
-							<div className="absolute inset-0 flex items-center">
-								<div className="w-full border-t border-gray-300"></div>
-							</div>
-							<div className="relative flex justify-center">
-								<span className="bg-white px-4 text-gray-500 text-sm">
-									OR
-								</span>
-							</div>
+						<div className="text-center mt-8">
+							<Link
+								to="/"
+								className="text-blue-600 hover:text-blue-800 text-sm inline-flex items-center"
+							>
+								<ArrowLeft size={16} className="mr-1" /> Back to
+								Home
+							</Link>
 						</div>
-
-						<button
-							type="button"
-							className="w-full flex items-center justify-center border-2 border-gray-300 text-gray-700 font-semibold py-2 px-4 rounded-lg hover:bg-gray-50 transition-colors"
-							onClick={handleGitHubLogin}
-							disabled={isLoading}
-						>
-							<Github size={20} className="mr-2" />
-							Sign in with GitHub
-						</button>
 					</form>
-
-					<div className="text-center mt-8">
-						<Link
-							to="/"
-							className="text-blue-600 hover:text-blue-800 text-sm inline-flex items-center"
-						>
-							<ArrowLeft size={16} className="mr-1" /> Back to
-							Home
-						</Link>
-					</div>
 				</div>
 			</div>
 		</div>

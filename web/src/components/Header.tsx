@@ -7,7 +7,7 @@ import {
 	LayoutDashboard,
 	Link as LinkIcon,
 } from "lucide-react";
-import { useAuth, pb } from "../hooks/useAuth";
+import { useAuth } from "../hooks/useAuth";
 
 function Header() {
 	const { isAuthenticated } = useAuth();
@@ -46,7 +46,7 @@ function Header() {
 									</Link>
 									<button
 										className="px-4 py-2 text-gray-700 hover:bg-gray-100 flex items-center w-full"
-										onClick={() => pb.authStore.clear()}
+										onClick={() => null} // Add logout functionality here
 									>
 										<LogOut className="mr-1" /> Logout
 									</button>

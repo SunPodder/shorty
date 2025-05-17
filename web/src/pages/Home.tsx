@@ -1,9 +1,10 @@
 import { FormEvent, useState } from "react";
-import { useNavigate } from "react-router";
 import { Globe, BarChart2, Users, Clock } from "lucide-react";
 import Header from "../components/Header";
 import Footer from "../components/Footer";
 import { useAuth } from "../hooks/useAuth";
+
+const API_ENDPOINT = import.meta.env.VITE_API_ENDPOINT;
 
 function Modal({
 	shortUrl,
@@ -12,27 +13,41 @@ function Modal({
 	shortUrl: string;
 	setShowModal: (show: boolean) => void;
 }) {
+	const [showCopied, setShowCopied] = useState(false);
+
+	const copyToClipboard = (text: string) => {
+		navigator.clipboard.writeText(text).then(() => {
+			setShowCopied(true);
+			setTimeout(() => setShowCopied(false), 2000);
+		});
+	};
+
 	return (
 		<div className="fixed inset-0 bg-black/30 bg-opacity-50 flex items-center justify-center p-4 z-50">
 			<div className="bg-white rounded-lg p-6 max-w-md w-full">
 				<h2 className="text-2xl font-bold mb-4">Your shortened URL</h2>
 				<div className="bg-gray-100 p-3 rounded mb-4 flex justify-between items-center">
-					<span className="font-medium text-blue-600">
+					<a
+						href={shortUrl}
+						target="_blank"
+						rel="noopener noreferrer"
+						className="font-medium text-blue-600 hover:underline break-all"
+					>
 						{shortUrl}
-					</span>
-					<button className="text-gray-600 hover:text-blue-600">
-						Copy
+					</a>
+					<button
+						onClick={() => copyToClipboard(shortUrl)}
+						className="text-gray-600 hover:text-blue-600 ml-2"
+					>
+						{showCopied ? "Copied!" : "Copy"}
 					</button>
 				</div>
-				<div className="flex justify-end gap-4">
+				<div className="flex justify-end">
 					<button
 						className="px-4 py-2 text-gray-600 hover:text-gray-800"
 						onClick={() => setShowModal(false)}
 					>
 						Close
-					</button>
-					<button className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">
-						Share
 					</button>
 				</div>
 			</div>
@@ -44,24 +59,44 @@ function Home() {
 	const [url, setUrl] = useState("");
 	const [showModal, setShowModal] = useState(false);
 	const [shortUrl, setShortUrl] = useState("");
-	const navigate = useNavigate();
-	const { isAuthenticated } = useAuth();
+	const [error, setError] = useState("");
+	const { authToken } = useAuth();
 
-	const handleSubmit = (e: FormEvent<HTMLFormElement>) => {
+	const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
 		e.preventDefault();
+		setError("");
 
-		// This is a stub implementation
-		const generatedShortUrl = "https://short.ly/abc123";
-		setShortUrl(generatedShortUrl);
+		const requestBody = {
+			original_url: url,
+			token: authToken,
+		};
 
-		if (isAuthenticated) {
-			// Redirect to customization page
-			navigate("/customize", {
-				state: { originalUrl: url, shortUrl: generatedShortUrl },
+		try {
+			const response = await fetch(`${API_ENDPOINT}new`, {
+				method: "POST",
+				headers: {
+					"Content-Type": "application/json",
+					...(authToken ? { Authorization: `Bearer ${authToken}` } : {}),
+				},
+				body: JSON.stringify(requestBody),
 			});
-		} else {
-			// Show modal with the short URL
+
+			if (!response.ok) {
+				const errorData = await response
+					.json()
+					.catch(() => ({ message: "Failed to shorten URL" }));
+				throw new Error(errorData.message || errorData.error || "Failed to shorten URL");
+			}
+
+			const data = await response.json();
+			const baseShortUrl = API_ENDPOINT.replace(/\/new\/?$/, "/");
+			const displayShortUrl = `${baseShortUrl}${data.short_code}`;
+			setShortUrl(displayShortUrl);
 			setShowModal(true);
+			setUrl(""); // Clear the input after successful submission
+		} catch (err) {
+			console.error(err);
+			setError(err instanceof Error ? err.message : "An unknown error occurred");
 		}
 	};
 
@@ -92,6 +127,11 @@ function Home() {
 
 				{/* URL Shortener Component */}
 				<div className="w-full max-w-2xl bg-white rounded-lg shadow-lg p-6">
+					{error && (
+						<div className="mb-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded-md">
+							<p>{error}</p>
+						</div>
+					)}
 					<form
 						onSubmit={handleSubmit}
 						className="flex flex-col md:flex-row gap-4"

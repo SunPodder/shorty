@@ -1,16 +1,20 @@
-import { AlertCircle, BarChart2, Clipboard, Edit, ExternalLink, Trash2 } from "lucide-react";
+import {
+	AlertCircle,
+	BarChart2,
+	Clipboard,
+	Edit,
+	ExternalLink,
+	Trash2,
+} from "lucide-react";
+import React from "react";
 
 function UrlsTable({
 	urls,
-	setUrls,
+	// setUrls, // setUrls might not be needed here if delete is removed
 }: {
-	urls: Url[];
-	setUrls: (urls: Url[]) => void;
+	urls: URLData[];
+	setUrls: React.Dispatch<React.SetStateAction<URLData[]>>; // Keep for prop consistency if parent needs it
 }) {
-	const deleteUrl = (id: string) => {
-		setUrls(urls.filter((url) => url.id !== id));
-	};
-
 	// Function to truncate long URLs for display
 	const truncateUrl = (url: string, maxLength = 40) => {
 		return url.length > maxLength
@@ -43,7 +47,7 @@ function UrlsTable({
 								scope="col"
 								className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
 							>
-								Short URL
+								Short URL (Link)
 							</th>
 							<th
 								scope="col"
@@ -73,17 +77,17 @@ function UrlsTable({
 					</thead>
 					<tbody className="bg-white divide-y divide-gray-200">
 						{urls.map((url) => (
-							<tr key={url.id}>
+							<tr key={url.short_code}>
 								<td className="px-6 py-4 whitespace-nowrap text-sm text-gray-800">
 									<div className="flex items-center">
 										<span
 											className="truncate max-w-xs"
-											title={url.originalUrl}
+											title={url.original_url}
 										>
-											{truncateUrl(url.originalUrl)}
+											{truncateUrl(url.original_url)}
 										</span>
 										<a
-											href={url.originalUrl}
+											href={url.original_url}
 											target="_blank"
 											rel="noopener noreferrer"
 											className="ml-2 text-gray-400 hover:text-gray-600"
@@ -94,12 +98,20 @@ function UrlsTable({
 								</td>
 								<td className="px-6 py-4 whitespace-nowrap text-sm text-blue-600">
 									<div className="flex items-center">
-										<span>{url.shortUrl}</span>
+										<a
+											href={url.display_short_url}
+											target="_blank"
+											rel="noopener noreferrer"
+											className="hover:underline"
+										>
+											{url.display_short_url || url.short_code}
+										</a>
 										<button
 											onClick={() =>
-												copyToClipboard(url.shortUrl)
+												copyToClipboard(url.display_short_url || url.short_code)
 											}
 											className="ml-2 text-gray-400 hover:text-gray-600"
+											title="Copy short URL"
 										>
 											<Clipboard size={14} />
 										</button>
@@ -109,29 +121,36 @@ function UrlsTable({
 									{url.clicks}
 								</td>
 								<td className="px-6 py-4 whitespace-nowrap text-sm text-gray-800">
-									{new Date(
-										url.createdAt,
-									).toLocaleDateString()}
+									{new Date(url.created_at).toLocaleDateString()}
 								</td>
 								<td className="px-6 py-4 whitespace-nowrap text-sm text-gray-800">
-									{url.expiresAt
+									{url.expiry_date
 										? new Date(
-												url.expiresAt,
+												url.expiry_date * 1000,
 											).toLocaleDateString()
 										: "Never"}
 								</td>
 								<td className="px-6 py-4 whitespace-nowrap text-sm text-gray-800">
 									<div className="flex items-center space-x-3">
-										<button className="text-blue-600 hover:text-blue-800">
+										<button
+											className="text-blue-600 hover:text-blue-800"
+											title="Edit (Not implemented)"
+											disabled
+										>
 											<Edit size={16} />
 										</button>
 										<button
 											className="text-red-600 hover:text-red-800"
-											onClick={() => deleteUrl(url.id)}
+											title="Delete (Not implemented)"
+											disabled
 										>
 											<Trash2 size={16} />
 										</button>
-										<button className="text-purple-600 hover:text-purple-800">
+										<button
+											className="text-purple-600 hover:text-purple-800"
+											title="Analytics (Not implemented)"
+											disabled
+										>
 											<BarChart2 size={16} />
 										</button>
 									</div>
