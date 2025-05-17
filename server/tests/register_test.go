@@ -56,7 +56,7 @@ func TestRegister_DuplicateEmail(t *testing.T) {
 	defer patchHash.Unpatch()
 
 	patchCreateUser := monkey.Patch(db.CreateUser, func(context.Context, db.User) error {
-		return db.DuplicateEmailError
+		return db.ErrDuplicateEmail
 	})
 	defer patchCreateUser.Unpatch()
 
