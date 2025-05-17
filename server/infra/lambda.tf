@@ -42,12 +42,3 @@ resource "aws_lambda_function" "resolve" {
   source_code_hash = filebase64sha256("${path.module}/../bin/resolve.zip")
   role          = aws_iam_role.lambda_exec.arn
 }
-
-resource "aws_lambda_function" "authorizer" {
-  function_name = "authorizer"
-  handler       = "authorizer"
-  runtime       = "go1.x"
-  filename      = "${path.module}/../bin/authorizer.zip"
-  source_code_hash = filebase64sha256("${path.module}/../bin/authorizer.zip")
-  role          = aws_iam_role.lambda_exec.arn
-}

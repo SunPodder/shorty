@@ -1,13 +1,7 @@
-all: authorizer login me register resolve shorten
+all: login me register resolve shorten
 
 test:
 	go test ./tests
-
-authorizer:
-	@echo "Building authorizer..."
-	@GOOS=linux GOARCH=amd64 CGO_ENABLED=0 go build -o bin/authorizer ./cmd/authorizer/main.go
-	@zip -j bin/authorizer.zip bin/authorizer
-	@echo "Authorizer built successfully."
 
 login:
 	@echo "Building login..."

@@ -16,8 +16,7 @@ module "me_endpoint" {
   lambda_function_arn  = aws_lambda_function.me.arn
   rest_api_id          = aws_api_gateway_rest_api.shorty_api.id
   root_resource_id     = aws_api_gateway_rest_api.shorty_api.root_resource_id
-  authorization_type   = "CUSTOM"
-  authorizer_id        = aws_api_gateway_authorizer.shorty_authorizer.id
+  authorization_type   = "NONE"
   enable_cors          = true
 }
 
@@ -81,33 +80,29 @@ module "resolve_endpoint" {
   enable_cors          = true
 }
 
-resource "aws_api_gateway_authorizer" "shorty_authorizer" {
-  name                    = "shorty-authorizer"
-  rest_api_id             = aws_api_gateway_rest_api.shorty_api.id
-  authorizer_uri          = "arn:aws:apigateway:${data.aws_region.current.name}:lambda:path/2015-03-31/functions/${aws_lambda_function.authorizer.arn}/invocations"
-  authorizer_result_ttl_in_seconds = 300
-  type                    = "TOKEN"
-  identity_source         = "method.request.header.Authorization"
-}
-
-resource "aws_lambda_permission" "authorizer" {
-  statement_id  = "AllowExecutionFromAPIGatewayAuthorizer"
-  action        = "lambda:InvokeFunction"
-  function_name = aws_lambda_function.authorizer.function_name
-  principal     = "apigateway.amazonaws.com"
-  source_arn    = "${aws_api_gateway_rest_api.shorty_api.execution_arn}/*/*"
-}
-
 resource "aws_api_gateway_deployment" "shorty_api" {
   depends_on = [
     module.me_endpoint.api_gateway_integration,
     module.shorten_endpoint.api_gateway_integration,
     module.login_endpoint.api_gateway_integration,
     module.register_endpoint.api_gateway_integration,
-    module.resolve_endpoint.api_gateway_integration,
-    aws_api_gateway_authorizer.shorty_authorizer
+    module.resolve_endpoint.api_gateway_integration
   ]
   rest_api_id = aws_api_gateway_rest_api.shorty_api.id
+
+  triggers = {
+    redeployment = sha1(join(",", [
+      aws_lambda_function.me.source_code_hash,
+      aws_lambda_function.shorten.source_code_hash,
+      aws_lambda_function.login.source_code_hash,
+      aws_lambda_function.register.source_code_hash,
+      aws_lambda_function.resolve.source_code_hash
+    ]))
+  }
+
+  lifecycle {
+    create_before_destroy = true
+  }
 }
 
 resource "aws_api_gateway_stage" "dev" {
