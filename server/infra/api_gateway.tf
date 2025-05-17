@@ -5,30 +5,80 @@ resource "aws_api_gateway_rest_api" "shorty_api" {
   description = "API Gateway for Shorty URL service"
 }
 
-resource "aws_api_gateway_resource" "me" {
-  rest_api_id = aws_api_gateway_rest_api.shorty_api.id
-  parent_id   = aws_api_gateway_rest_api.shorty_api.root_resource_id
-  path_part   = "me"
+module "me_endpoint" {
+  source = "./modules/api_gateway_endpoint"
+
+  endpoint_name        = "me"
+  path_part            = "me"
+  http_method          = "GET"
+  lambda_function_name = aws_lambda_function.me.function_name
+  lambda_invoke_arn    = aws_lambda_function.me.invoke_arn
+  lambda_function_arn  = aws_lambda_function.me.arn
+  rest_api_id          = aws_api_gateway_rest_api.shorty_api.id
+  root_resource_id     = aws_api_gateway_rest_api.shorty_api.root_resource_id
+  authorization_type   = "CUSTOM"
+  authorizer_id        = aws_api_gateway_authorizer.shorty_authorizer.id
+  enable_cors          = true
 }
-resource "aws_api_gateway_resource" "shorten" {
-  rest_api_id = aws_api_gateway_rest_api.shorty_api.id
-  parent_id   = aws_api_gateway_rest_api.shorty_api.root_resource_id
-  path_part   = "new"
+
+module "shorten_endpoint" {
+  source = "./modules/api_gateway_endpoint"
+
+  endpoint_name        = "shorten"
+  path_part            = "new"
+  http_method          = "POST"
+  lambda_function_name = aws_lambda_function.shorten.function_name
+  lambda_invoke_arn    = aws_lambda_function.shorten.invoke_arn
+  lambda_function_arn  = aws_lambda_function.shorten.arn
+  rest_api_id          = aws_api_gateway_rest_api.shorty_api.id
+  root_resource_id     = aws_api_gateway_rest_api.shorty_api.root_resource_id
+  authorization_type   = "NONE"
+  enable_cors          = true
 }
-resource "aws_api_gateway_resource" "login" {
-  rest_api_id = aws_api_gateway_rest_api.shorty_api.id
-  parent_id   = aws_api_gateway_rest_api.shorty_api.root_resource_id
-  path_part   = "login"
+
+module "login_endpoint" {
+  source = "./modules/api_gateway_endpoint"
+
+  endpoint_name        = "login"
+  path_part            = "login"
+  http_method          = "POST"
+  lambda_function_name = aws_lambda_function.login.function_name
+  lambda_invoke_arn    = aws_lambda_function.login.invoke_arn
+  lambda_function_arn  = aws_lambda_function.login.arn
+  rest_api_id          = aws_api_gateway_rest_api.shorty_api.id
+  root_resource_id     = aws_api_gateway_rest_api.shorty_api.root_resource_id
+  authorization_type   = "NONE"
+  enable_cors          = true
 }
-resource "aws_api_gateway_resource" "register" {
-  rest_api_id = aws_api_gateway_rest_api.shorty_api.id
-  parent_id   = aws_api_gateway_rest_api.shorty_api.root_resource_id
-  path_part   = "signup"
+
+module "register_endpoint" {
+  source = "./modules/api_gateway_endpoint"
+
+  endpoint_name        = "register"
+  path_part            = "register"
+  http_method          = "POST"
+  lambda_function_name = aws_lambda_function.register.function_name
+  lambda_invoke_arn    = aws_lambda_function.register.invoke_arn
+  lambda_function_arn  = aws_lambda_function.register.arn
+  rest_api_id          = aws_api_gateway_rest_api.shorty_api.id
+  root_resource_id     = aws_api_gateway_rest_api.shorty_api.root_resource_id
+  authorization_type   = "NONE"
+  enable_cors          = true
 }
-resource "aws_api_gateway_resource" "resolve" {
-  rest_api_id = aws_api_gateway_rest_api.shorty_api.id
-  parent_id   = aws_api_gateway_rest_api.shorty_api.root_resource_id
-  path_part   = "{short_code}"
+
+module "resolve_endpoint" {
+  source = "./modules/api_gateway_endpoint"
+
+  endpoint_name        = "resolve"
+  path_part            = "{short_code}"
+  http_method          = "GET"
+  lambda_function_name = aws_lambda_function.resolve.function_name
+  lambda_invoke_arn    = aws_lambda_function.resolve.invoke_arn
+  lambda_function_arn  = aws_lambda_function.resolve.arn
+  rest_api_id          = aws_api_gateway_rest_api.shorty_api.id
+  root_resource_id     = aws_api_gateway_rest_api.shorty_api.root_resource_id
+  authorization_type   = "NONE"
+  enable_cors          = true
 }
 
 resource "aws_api_gateway_authorizer" "shorty_authorizer" {
@@ -40,82 +90,6 @@ resource "aws_api_gateway_authorizer" "shorty_authorizer" {
   identity_source         = "method.request.header.Authorization"
 }
 
-resource "aws_api_gateway_method" "me_get" {
-  rest_api_id   = aws_api_gateway_rest_api.shorty_api.id
-  resource_id   = aws_api_gateway_resource.me.id
-  http_method   = "GET"
-  authorization = "CUSTOM"
-  authorizer_id = aws_api_gateway_authorizer.shorty_authorizer.id
-}
-resource "aws_api_gateway_integration" "me_get" {
-  rest_api_id             = aws_api_gateway_rest_api.shorty_api.id
-  resource_id             = aws_api_gateway_resource.me.id
-  http_method             = aws_api_gateway_method.me_get.http_method
-  integration_http_method = "POST"
-  type                    = "AWS_PROXY"
-  uri                     = aws_lambda_function.me.invoke_arn
-}
-
-resource "aws_api_gateway_method" "shorten_post" {
-  rest_api_id   = aws_api_gateway_rest_api.shorty_api.id
-  resource_id   = aws_api_gateway_resource.shorten.id
-  http_method   = "POST"
-  authorization = "NONE"
-}
-resource "aws_api_gateway_integration" "shorten_post" {
-  rest_api_id             = aws_api_gateway_rest_api.shorty_api.id
-  resource_id             = aws_api_gateway_resource.shorten.id
-  http_method             = aws_api_gateway_method.shorten_post.http_method
-  integration_http_method = "POST"
-  type                    = "AWS_PROXY"
-  uri                     = aws_lambda_function.shorten.invoke_arn
-}
-
-resource "aws_api_gateway_method" "login_post" {
-  rest_api_id   = aws_api_gateway_rest_api.shorty_api.id
-  resource_id   = aws_api_gateway_resource.login.id
-  http_method   = "POST"
-  authorization = "NONE"
-}
-resource "aws_api_gateway_integration" "login_post" {
-  rest_api_id             = aws_api_gateway_rest_api.shorty_api.id
-  resource_id             = aws_api_gateway_resource.login.id
-  http_method             = aws_api_gateway_method.login_post.http_method
-  integration_http_method = "POST"
-  type                    = "AWS_PROXY"
-  uri                     = aws_lambda_function.login.invoke_arn
-}
-
-resource "aws_api_gateway_method" "register_post" {
-  rest_api_id   = aws_api_gateway_rest_api.shorty_api.id
-  resource_id   = aws_api_gateway_resource.register.id
-  http_method   = "POST"
-  authorization = "NONE"
-}
-resource "aws_api_gateway_integration" "register_post" {
-  rest_api_id             = aws_api_gateway_rest_api.shorty_api.id
-  resource_id             = aws_api_gateway_resource.register.id
-  http_method             = aws_api_gateway_method.register_post.http_method
-  integration_http_method = "POST"
-  type                    = "AWS_PROXY"
-  uri                     = aws_lambda_function.register.invoke_arn
-}
-
-resource "aws_api_gateway_method" "resolve_get" {
-  rest_api_id   = aws_api_gateway_rest_api.shorty_api.id
-  resource_id   = aws_api_gateway_resource.resolve.id
-  http_method   = "GET"
-  authorization = "NONE"
-}
-resource "aws_api_gateway_integration" "resolve_get" {
-  rest_api_id             = aws_api_gateway_rest_api.shorty_api.id
-  resource_id             = aws_api_gateway_resource.resolve.id
-  http_method             = aws_api_gateway_method.resolve_get.http_method
-  integration_http_method = "POST"
-  type                    = "AWS_PROXY"
-  uri                     = aws_lambda_function.resolve.invoke_arn
-}
-
 resource "aws_lambda_permission" "authorizer" {
   statement_id  = "AllowExecutionFromAPIGatewayAuthorizer"
   action        = "lambda:InvokeFunction"
@@ -123,49 +97,15 @@ resource "aws_lambda_permission" "authorizer" {
   principal     = "apigateway.amazonaws.com"
   source_arn    = "${aws_api_gateway_rest_api.shorty_api.execution_arn}/*/*"
 }
-resource "aws_lambda_permission" "me" {
-  statement_id  = "AllowExecutionFromAPIGatewayMe"
-  action        = "lambda:InvokeFunction"
-  function_name = aws_lambda_function.me.function_name
-  principal     = "apigateway.amazonaws.com"
-  source_arn    = "${aws_api_gateway_rest_api.shorty_api.execution_arn}/*/*"
-}
-resource "aws_lambda_permission" "shorten" {
-  statement_id  = "AllowExecutionFromAPIGatewayShorten"
-  action        = "lambda:InvokeFunction"
-  function_name = aws_lambda_function.shorten.function_name
-  principal     = "apigateway.amazonaws.com"
-  source_arn    = "${aws_api_gateway_rest_api.shorty_api.execution_arn}/*/*"
-}
-resource "aws_lambda_permission" "login" {
-  statement_id  = "AllowExecutionFromAPIGatewayLogin"
-  action        = "lambda:InvokeFunction"
-  function_name = aws_lambda_function.login.function_name
-  principal     = "apigateway.amazonaws.com"
-  source_arn    = "${aws_api_gateway_rest_api.shorty_api.execution_arn}/*/*"
-}
-resource "aws_lambda_permission" "register" {
-  statement_id  = "AllowExecutionFromAPIGatewayRegister"
-  action        = "lambda:InvokeFunction"
-  function_name = aws_lambda_function.register.function_name
-  principal     = "apigateway.amazonaws.com"
-  source_arn    = "${aws_api_gateway_rest_api.shorty_api.execution_arn}/*/*"
-}
-resource "aws_lambda_permission" "resolve" {
-  statement_id  = "AllowExecutionFromAPIGatewayResolve"
-  action        = "lambda:InvokeFunction"
-  function_name = aws_lambda_function.resolve.function_name
-  principal     = "apigateway.amazonaws.com"
-  source_arn    = "${aws_api_gateway_rest_api.shorty_api.execution_arn}/*/*"
-}
 
 resource "aws_api_gateway_deployment" "shorty_api" {
   depends_on = [
-    aws_api_gateway_integration.me_get,
-    aws_api_gateway_integration.shorten_post,
-    aws_api_gateway_integration.login_post,
-    aws_api_gateway_integration.register_post,
-    aws_api_gateway_integration.resolve_get
+    module.me_endpoint.api_gateway_integration,
+    module.shorten_endpoint.api_gateway_integration,
+    module.login_endpoint.api_gateway_integration,
+    module.register_endpoint.api_gateway_integration,
+    module.resolve_endpoint.api_gateway_integration,
+    aws_api_gateway_authorizer.shorty_authorizer
   ]
   rest_api_id = aws_api_gateway_rest_api.shorty_api.id
 }
